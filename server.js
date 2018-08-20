@@ -53,6 +53,8 @@ exports.middleware = function(authFn, options) {
     let oneHourMs = (60 * 60 * 1000);
     let sessionStore = {};
     return async function (request, response, next) {
+        // console.log("authMiddleware path", request.path);
+        
         if (request.app.authMiddleware_setup == undefined) {
             let authJs = await readAuthJs();
             let reqPath = request.path;
@@ -71,7 +73,7 @@ exports.middleware = function(authFn, options) {
                 cookieMiddleware, upload.array(),
                 async function (req, res) {
                     let data = req.body;
-                    console.log("data", data);
+                    // console.log("data", data);
                     let { username, password } = data;
                     if (authFn(username, password)) {
                         let now = new Date();
@@ -80,6 +82,9 @@ exports.middleware = function(authFn, options) {
                             lastTouch: now,
                             id: sessionId
                         };
+
+                        // console.log("auth middleware setting cookie", req.path);
+
                         res.cookie("sessionid", sessionId);
                         res.redirect(302, req,path);
                     }
@@ -110,6 +115,12 @@ exports.middleware = function(authFn, options) {
         }
 
         cookieMiddleware(request, response, function () {
+            /*
+            console.log("auth - cookie middlewared path",
+                        request.path,
+                        request.cookies,
+                        request.get("Cookie"));
+            */
             // Do authenticated session detection
             let sessionId = request.cookies.sessionid;
             if (sessionId === undefined) {
