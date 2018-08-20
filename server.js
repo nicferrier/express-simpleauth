@@ -8,7 +8,7 @@ const querystring = require("querystring");
 const fs = require("./fsasync.js");
 
 const crypto = require("crypto");
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const upload = multer();
 const cookieMiddleware = cookieParser();
