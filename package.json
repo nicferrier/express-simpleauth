@@ -1,6 +1,6 @@
 {
     "name": "simple-auth-4-express",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "A simple authentication middleware for Express",
     "main": "server.js",
     "scripts": {

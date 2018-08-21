@@ -46,7 +46,8 @@ window.addEventListener("load", () => {
 
         let promise = fetch(url, {
             method: "POST",
-            body: fd
+            body: fd,
+            credentials: "same-origin"
         });
 
         promise.then(response => {
