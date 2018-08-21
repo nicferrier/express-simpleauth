@@ -56,7 +56,7 @@ exports.middleware = function(authFn, options) {
         // console.log("authMiddleware path", request.path);
         
         if (request.app.authMiddleware_setup == undefined) {
-            let authJs = await readAuthJs();
+            //let authJs = await readAuthJs();
             let reqPath = request.path;
             let authRoutePath = await new Promise((resolve, reject) => {
                 crypto.pseudoRandomBytes(64, function(err, raw) {
@@ -83,20 +83,21 @@ exports.middleware = function(authFn, options) {
                             id: sessionId
                         };
 
-                        // console.log("auth middleware setting cookie", req.path);
-
                         res.cookie("sessionid", sessionId);
-                        res.redirect(302, req,path);
+                        res.set("Location", request.path);
+                        res.sendStatus(302);
+                        return;
                     }
                     else {
                         res.status(401).send(html);
                     }
                 });
 
-            request.app.get(authRoutePath + "/index.js", function (req, res) {
+            request.app.get(authRoutePath + "/index.js", async function (req, res) {
                 res.set("content-type", "application/javascript");
+                let authJs = await readAuthJs();
                 res.send(`const middlewarePath = "${authRoutePath}";\n`
-                        + authJs);
+                         + authJs);
             });
 
             request.app.get(authRoutePath + "/style.css", function (req, res) {

@@ -4,9 +4,19 @@ window.addEventListener("load", () => {
         return new Error("no middleware path defined");
     }
 
+    let loc = document.location;
+    let netloc = loc.protocol + "//" + loc.host;
+    let netport = netloc + ((loc.port == "") ? "" : ":" + loc.port);
+    let url = netloc + middlewarePath;
+    console.log("fetch url", url);
+
     let form = document.body
         .appendChild(document.createElement("div"))
         .appendChild(document.createElement("form"));
+
+    // Firefox won't seem to work without these
+    form.setAttribute("action", url);
+    form.setAttribute("method", "POST");
 
     let username = form.appendChild(document.createElement("input"));
     username.setAttribute("type", "text");
@@ -20,24 +30,31 @@ window.addEventListener("load", () => {
 
     form.addEventListener("keypress", keyEvt => {
         if (keyEvt.key == "Enter") {
+            keyEvt.preventDefault();
+            keyEvt.stopPropagation();
             let submit = new Event("submit");
             form.dispatchEvent(submit);
         }
     });
 
-    form.addEventListener("submit", async submitEvt => {
+    form.addEventListener("submit", submitEvt => {
         submitEvt.preventDefault();
+        submitEvt.stopPropagation();
 
         let fd = new FormData(form);
-        console.log("fd", Array.from(fd.entries()));
-        let url = document.location.href.substring(0, document.location.href.indexOf("/") || document.location.length);
-        let response = await fetch(url + middlewarePath, {
+        // console.log("fd", JSON.stringify(Array.from(fd.entries()), null, 2));
+
+        let promise = fetch(url, {
             method: "POST",
             body: fd
         });
 
-        if (response.redirected == true) {
-            location = location.href;
-        }
+        promise.then(response => {
+            if (response.redirected) {
+                location = location.href;
+            }
+        }).catch(err => console.log("simple-auth-4-express js error:", err));
+        
+        return false;
     });
 });
