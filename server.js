@@ -68,33 +68,6 @@ exports.middleware = function(authFn, options) {
                 });
             });
 
-            request.app.post(
-                authRoutePath,
-                cookieMiddleware, upload.array(),
-                async function (req, res) {
-                    let data = req.body;
-                    // console.log("data", data);
-                    let { username, password } = data;
-                    if (authFn(username, password)) {
-                        let now = new Date();
-                        let sessionId = await makeSessionId(now, getRemoteAddr(req));
-                        let sessionObject = {
-                            lastTouch: now,
-                            id: sessionId,
-                            username: username
-                        };
-                        sessionStore[sessionId] = sessionObject;
-
-                        res.cookie("sessionid", sessionId);
-                        res.set("Location", request.path);
-                        res.sendStatus(302);
-                        return;
-                    }
-                    else {
-                        res.status(401).send(html);
-                    }
-                });
-
             request.app.get(authRoutePath + "/index.js", async function (req, res) {
                 res.set("content-type", "application/javascript");
                 let authJs = await readAuthJs();
@@ -115,6 +88,34 @@ exports.middleware = function(authFn, options) {
 <body>
 </body>
 </html>`;
+            
+            request.app.post(
+                authRoutePath,
+                cookieMiddleware, upload.array(),
+                async function (req, res) {
+                    let data = req.body;
+                    // console.log("data", data);
+                    let { username, password } = data;
+                    let authenticated = await authFn(username, password);
+                    if (authenticated) {
+                        let now = new Date();
+                        let sessionId = await makeSessionId(now, getRemoteAddr(req));
+                        let sessionObject = {
+                            lastTouch: now,
+                            id: sessionId,
+                            username: username
+                        };
+                        sessionStore[sessionId] = sessionObject;
+
+                        res.cookie("sessionid", sessionId);
+                        res.set("Location", request.path);
+                        res.sendStatus(302);
+                        return;
+                    }
+                    else {
+                        res.status(401).send(request.app.authMiddleware_setup);
+                    }
+                });
         }
 
         cookieMiddleware(request, response, function () {
