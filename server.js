@@ -78,10 +78,12 @@ exports.middleware = function(authFn, options) {
                     if (authFn(username, password)) {
                         let now = new Date();
                         let sessionId = await makeSessionId(now, getRemoteAddr(req));
-                        sessionStore[sessionId] = {
+                        let sessionObject = {
                             lastTouch: now,
-                            id: sessionId
+                            id: sessionId,
+                            username: username
                         };
+                        sessionStore[sessionId] = sessionObject;
 
                         res.cookie("sessionid", sessionId);
                         res.set("Location", request.path);
@@ -137,6 +139,7 @@ exports.middleware = function(authFn, options) {
             }
 
             // Otherwise it's all ok.
+            request.sessionObject = sessionObject;
             next();
         });
     };
