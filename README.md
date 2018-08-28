@@ -60,3 +60,12 @@ It works by inserting handlers for the POST and the assets it needs
 (mainly the AJAXing JS).
 
 This seems like a bit of a dodgy tactic. But it does work.
+
+
+## Disadvantages
+
+You cannot just POST your username and password to the endpoint you
+expect them to be at.
+
+Until there is a 401 this simple-authentication middleware will not do
+anything about auth.
