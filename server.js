@@ -1,4 +1,4 @@
-// Express auth middleware
+// Express auth middleware  -*- js-indent-level: 4 -*-
 // Copyright (C) 2018 by Nic Ferrier
 
 const cookieParser = require('cookie-parser')
@@ -52,10 +52,11 @@ function makeSessionId(...args) {
 exports.middleware = function(authFn, options) {
     let oneHourMs = (60 * 60 * 1000);
     let sessionStore = {};
+
     return async function (request, response, next) {
-        // console.log("authMiddleware path", request.path);
-        
-        if (request.app.authMiddleware_setup == undefined) {
+        console.log("authMiddleware path", request.path, "options", options);
+
+        if (request.app.authMiddlewareConfig == undefined) {
             //let authJs = await readAuthJs();
             let reqPath = request.path;
             let authRoutePath = await new Promise((resolve, reject) => {
@@ -68,26 +69,19 @@ exports.middleware = function(authFn, options) {
                 });
             });
 
+            request.app.authMiddlewareConfig = {};
+            request.app.authMiddlewareConfig.authRoutePath = authRoutePath;
+            request.app.authMiddlewareConfig.authHtml = {};
+
             request.app.get(authRoutePath + "/index.js", async function (req, res) {
                 res.set("content-type", "application/javascript");
                 let authJs = await readAuthJs();
-                res.send(`const middlewarePath = "${authRoutePath}";\n`
-                         + authJs);
+                res.send(authJs)
             });
 
             request.app.get(authRoutePath + "/style.css", function (req, res) {
                 res.sendFile(path.join(__dirname, "style.css"));
             });
-
-            // The setup variable is the HTML we need to use
-            request.app.authMiddleware_setup = `<html>
-<head>
-<link rel="stylesheet" href="${authRoutePath}/style.css" type="text/css">
-<script src="${authRoutePath}/index.js" type="module"></script>
-</head>
-<body>
-</body>
-</html>`;
             
             request.app.post(
                 authRoutePath,
@@ -113,10 +107,34 @@ exports.middleware = function(authFn, options) {
                         return;
                     }
                     else {
-                        res.status(401).send(request.app.authMiddleware_setup);
+                        res.set("x-authentication-location", "/auth");
+                        let middlewareConfig = req.app.authMiddlewareConfig;
+                        let authHtml = middlewareConfig.authHtml[req.path];
+                        console.log("auth", authHtml);
+                        res.status(401).send(authHtml);
                     }
                 });
         }
+
+        let extraAuthJsUrl = options.extraAuthJsUrl;
+        let extraScript = extraAuthJsUrl != undefined && extraAuthJsUrl != ""
+            ? `\n<script src="${extraAuthJsUrl}"></script>\n` : "";
+
+        // The setup variable is the HTML we need to use
+        let authRoutePath = request.app.authMiddlewareConfig.authRoutePath;
+        request.app.authMiddlewareConfig.authHtml[request.path] = `<html>
+<head>
+<link rel="stylesheet" href="${authRoutePath}/style.css" type="text/css">
+<script>
+window.addEventListener("load", () => {
+  window.authMiddlewarePath = "${authRoutePath}";
+});
+</script>
+<script src="${authRoutePath}/index.js"></script>${extraScript}
+</head>
+<body>
+</body>
+</html>`;
 
         cookieMiddleware(request, response, function () {
             /*
@@ -125,17 +143,23 @@ exports.middleware = function(authFn, options) {
                         request.cookies,
                         request.get("Cookie"));
             */
+
+            let middlewareConfig = request.app.authMiddlewareConfig;
+            let authHtml = middlewareConfig.authHtml[request.path];
+            
             // Do authenticated session detection
             let sessionId = request.cookies.sessionid;
             if (sessionId === undefined) {
-                response.status(401).send(request.app.authMiddleware_setup);
+                response.set("x-authentication-location", "/auth");
+                response.status(401).send(authHtml);
                 return;
             }
             
             let sessionObject = sessionStore[sessionId];
             if (sessionObject === undefined
                 || isExpired(sessionObject.lastTouch, oneHourMs)) {
-                response.status(401).send(request.app.authMiddleware_setup);
+                response.set("x-authentication-location", "/auth");
+                response.status(401).send(authHtml);
                 return;
             }
 

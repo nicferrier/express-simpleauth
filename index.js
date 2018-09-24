@@ -1,14 +1,16 @@
-// This requires that this script is prepended with the middleware path
+// -*- js-indent-level: 4 -*-
+
 window.addEventListener("load", () => {
-    if (middlewarePath == undefined) {
+    if (window.authMiddlewarePath == undefined) {
         return new Error("no middleware path defined");
     }
+    let middlewarePath = window.authMiddlewarePath;
 
     let loc = document.location;
     let netloc = loc.protocol + "//" + loc.host;
     let netport = netloc + ((loc.port == "") ? "" : ":" + loc.port);
     let url = netloc + middlewarePath;
-    console.log("fetch url", url);
+    // console.log("fetch url", url);
 
     let form = document.body
         .appendChild(document.createElement("div"))
