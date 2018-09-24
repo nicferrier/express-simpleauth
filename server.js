@@ -116,7 +116,7 @@ exports.middleware = function(authFn, options) {
                 });
         }
 
-        let extraAuthJsUrl = options.extraAuthJsUrl;
+        let extraAuthJsUrl = options != undefined ? options.extraAuthJsUrl : undefined;
         let extraScript = extraAuthJsUrl != undefined && extraAuthJsUrl != ""
             ? `\n<script src="${extraAuthJsUrl}"></script>\n` : "";
 

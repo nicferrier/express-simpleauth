@@ -19,7 +19,7 @@ const authMiddleware1 = auth.middleware(function (username, password) {
         return true;
     }
     return false;
-}, { name: "one", extraAuthJsUrl: "" });
+});
 
 app.get("/", authMiddleware1, function (req, res) {
     res.send("<html><h1>hi!</h1></html>");
@@ -54,6 +54,7 @@ let listener = app.listen(0, async function () {
         let port = listener.address().port;
         console.log("listening on", port);
 
+        /* Basic fetch to check for inserted js file */
         let get = await fetch(`http://localhost:${port}`);
         let body = await get.text(); // it's html
 
