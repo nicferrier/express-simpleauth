@@ -101,6 +101,9 @@ window.addEventListener("load", loadEvt => {
 });
 ```
 
+You can, of course, use Javascript to add stylesheets and other form
+decoration.
+
 ## Multiple authentication middlewares
 
 As you might expect it's possible to have multiple authentication
