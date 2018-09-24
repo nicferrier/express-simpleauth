@@ -32,10 +32,15 @@ window.addEventListener("load", () => {
 
     form.addEventListener("keypress", keyEvt => {
         if (keyEvt.key == "Enter") {
-            keyEvt.preventDefault();
-            keyEvt.stopPropagation();
-            let submit = new Event("submit");
-            form.dispatchEvent(submit);
+            try {
+                let submit = new Event("submit");
+                form.dispatchEvent(submit);
+                keyEvt.preventDefault();
+                keyEvt.stopPropagation();
+            }
+            catch (e) {
+                form.submit();
+            }
         }
     });
 

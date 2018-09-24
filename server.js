@@ -6,12 +6,16 @@ const multer = require("multer");
 const path = require("path");
 const querystring = require("querystring");
 const fs = require("./fsasync.js");
+const expressBrowserify = require("express-browserify");
 
 const crypto = require("crypto");
 const bcrypt = require('bcryptjs');
 
 const upload = multer();
 const cookieMiddleware = cookieParser();
+
+const babelify = require("express-babelify-middleware");
+
 
 function readAuthJs() {
     return fs.promises.readFile(path.join(__dirname, "index.js"));
@@ -48,7 +52,6 @@ function makeSessionId(...args) {
     });
 }
 
-
 exports.middleware = function(authFn, options) {
     let oneHourMs = (60 * 60 * 1000);
     let sessionStore = {};
@@ -73,11 +76,11 @@ exports.middleware = function(authFn, options) {
             request.app.authMiddlewareConfig.authRoutePath = authRoutePath;
             request.app.authMiddlewareConfig.authHtml = {};
 
-            request.app.get(authRoutePath + "/index.js", async function (req, res) {
-                res.set("content-type", "application/javascript");
-                let authJs = await readAuthJs();
-                res.send(authJs)
-            });
+            request.app.get(authRoutePath + "/index.js",
+                            babelify(path.join(__dirname, "index.js"), {
+                                presets: ["@babel/preset-env", "@babel/polyfill"],
+                                sourceMaps: false
+                            }));
 
             request.app.get(authRoutePath + "/style.css", function (req, res) {
                 res.sendFile(path.join(__dirname, "style.css"));
@@ -126,7 +129,7 @@ exports.middleware = function(authFn, options) {
 <head>
 <link rel="stylesheet" href="${authRoutePath}/style.css" type="text/css">
 <script>
-window.addEventListener("load", () => {
+window.addEventListener("load", function () {
   window.authMiddlewarePath = "${authRoutePath}";
 });
 </script>
