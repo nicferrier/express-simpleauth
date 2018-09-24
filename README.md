@@ -18,7 +18,7 @@ const app = express();
 const authMiddleware = auth.middleware(function (username, password) {
     let users = { "nic": "secret" };
     return users[username] == password;
-})
+});
 
 app.get("/", authMiddleware, function (req, res) {
     res.send("<html><h1>hi!</h1></html>");
@@ -69,3 +69,68 @@ expect them to be at.
 
 Until there is a 401 this simple-authentication middleware will not do
 anything about auth.
+
+## Customizing the UI
+
+The provided UI is *really* basic and constructed entirely with JS on
+the client side.
+
+You can extend this construction by adding another JS file to the
+client:
+
+```javascript
+const authMiddleware = auth.middleware((username, password) => {
+    let users = { "nic": "secret" };
+    return users[username] == password;
+}, { extraAuthJsUrl: "/extra.js" });
+```
+
+the path must be accessible to the User-Agent so there must be a route
+that serves the extra.js.
+
+An example of extra js that adds a login button to the form:
+
+```javascript
+window.addEventListener("load", loadEvt => {
+    let button = document.createElement("input");
+    button.setAttribute("type", "submit");
+    button.setAttribute("name", "login");
+    button.setAttribute("value", "login");
+    let input = document.querySelectorAll("input")[1];
+    input.after(button);
+});
+```
+
+## Multiple authentication middlewares
+
+As you might expect it's possible to have multiple authentication
+middlewares:
+
+```javascript
+const authMiddleware1 = auth.middleware(function (username, password) {
+    let auth = (username == "nic" && password == "secret");
+    if (auth) {
+        return true;
+    }
+    return false;
+}, { name: "one", extraAuthJsUrl: "" });
+
+const authMiddleware2 = auth.middleware(function (username, password) {
+    let auth = (username == "nic" && password == "secret");
+    if (auth) {
+        return true;
+    }
+    return false;
+}, { name: "two", extraAuthJsUrl: "extra.js" });
+
+app.use("/", express.staticdir(path.join(__dirname, "www-static")));
+
+app.get("/", authMiddleware1, function (req, res) {
+    res.send("<html><h1>hello</h1></html>");
+});
+
+app.get("/admin", authMiddleware2, function (req, res) {
+    res.send("<html><h1>admin</h1></html>");
+});
+```
+
